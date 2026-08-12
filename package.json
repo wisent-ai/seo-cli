@@ -1,0 +1,19 @@
+{
+  "name": "@wisent-ai/seo-cli",
+  "version": "0.1.0",
+  "description": "Deterministic technical and on-page SEO audit CLI",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wisent-ai/seo-cli.git"
+  },
+  "bin": {
+    "seo": "./src/cli.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": ["src", "LICENSE"],
+  "engines": { "node": ">=20" }
+}
