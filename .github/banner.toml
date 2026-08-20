@@ -1,0 +1,15 @@
+[automation]
+managed = true
+source_fingerprint = "82d10c28712a36aa"
+category = "developer"
+
+[banner]
+title = "Seo CLI builds. You ship faster."
+description = "Deterministic SEO audit CLI and JavaScript library"
+product = "Wisent"
+url = "wisent.com"
+theme = "dark"
+layout = "signal-left"
+art_seed = "seo-cli"
+width = 1584
+height = 396
