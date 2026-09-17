@@ -1,3 +1,9 @@
+// Result pages show about 15-65 characters of a title and 70-170 of a description.
+const TITLE_MIN = 15
+const TITLE_MAX = 65
+const DESCRIPTION_MIN = 70
+const DESCRIPTION_MAX = 170
+
 function clean(value) {
   return String(value ?? '').replace(/\s+/gu, ' ').trim()
 }
@@ -13,7 +19,8 @@ function decode(value) {
 
 function attribute(tag, name) {
   const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'iu'))
-  return decode(match?.[1] ?? match?.[2] ?? match?.[3] ?? '')
+  const [, doubleQuoted, singleQuoted, bare] = match ?? []
+  return decode(doubleQuoted ?? singleQuoted ?? bare ?? '')
 }
 
 function firstTag(html, pattern) {
@@ -82,9 +89,9 @@ export function auditSeoSnapshot(input = {}) {
   const findings = []
   const add = (code, severity, message) => findings.push({ code, severity, message })
   if (!snapshot.title) add('title_missing', 'error', 'The document has no title.')
-  else if (snapshot.title.length < 15 || snapshot.title.length > 65) add('title_length', 'warning', `Title length is ${snapshot.title.length}; keep it between 15 and 65 characters.`)
+  else if (snapshot.title.length < TITLE_MIN || snapshot.title.length > TITLE_MAX) add('title_length', 'warning', `Title length is ${snapshot.title.length}; keep it between ${TITLE_MIN} and ${TITLE_MAX} characters.`)
   if (!snapshot.description) add('description_missing', 'error', 'The document has no meta description.')
-  else if (snapshot.description.length < 70 || snapshot.description.length > 170) add('description_length', 'warning', `Description length is ${snapshot.description.length}; keep it between 70 and 170 characters.`)
+  else if (snapshot.description.length < DESCRIPTION_MIN || snapshot.description.length > DESCRIPTION_MAX) add('description_length', 'warning', `Description length is ${snapshot.description.length}; keep it between ${DESCRIPTION_MIN} and ${DESCRIPTION_MAX} characters.`)
   if (!snapshot.canonical) add('canonical_missing', 'warning', 'The document has no canonical URL.')
   if (!snapshot.language) add('language_missing', 'warning', 'The html element has no language.')
   if (snapshot.h1.length === 0) add('h1_missing', 'error', 'The document has no H1 heading.')
