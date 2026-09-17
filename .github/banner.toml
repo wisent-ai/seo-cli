@@ -1,0 +1,17 @@
+[automation]
+managed = true
+source_fingerprint = "0caa5e5b8923fcf4"
+category = "developer"
+copy_status = "missing"
+approved_in = ""
+
+[banner]
+title = "Seo CLI"
+description = ""
+product = "Wisent"
+url = "wisent.com"
+theme = "dark"
+layout = "signal-left"
+art_seed = "seo-cli"
+width = 1584
+height = 396
