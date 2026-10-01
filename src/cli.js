@@ -3,6 +3,10 @@
 import { readFile } from 'node:fs/promises'
 import { auditHtml } from './index.js'
 
+// The invocation itself is wrong: exit 2 with the usage; any other failure
+// exits 1 with its own message (cli.md rule 10).
+class UsageError extends Error {}
+
 function usage() {
   return `seo-cli
 
@@ -24,25 +28,30 @@ async function main() {
     console.log(usage())
     return
   }
-  if (args[0] !== 'audit') throw new Error(`Unknown command: ${args[0]}\n\n${usage()}`)
+  if (args[0] !== 'audit') throw new UsageError(`Unknown command: ${args[0]}\n\n${usage()}`)
   const file = value(args, '--file')
   const target = value(args, '--url')
   let html
   if (file) {
     html = await readFile(file, 'utf8')
   } else if (target) {
-    const url = new URL(target)
-    if (url.protocol !== 'https:' || url.username || url.password) throw new Error('--url must be a credential-free HTTPS URL')
+    let url
+    try {
+      url = new URL(target)
+    } catch {
+      throw new UsageError(`--url ${JSON.stringify(target)} is not a URL`)
+    }
+    if (url.protocol !== 'https:' || url.username || url.password) throw new UsageError('--url must be a credential-free HTTPS URL')
     const response = await fetch(url, { redirect: 'follow', headers: { 'user-agent': 'seo-cli/0.1' } })
     if (!response.ok) throw new Error(`Fetch returned HTTP ${response.status}`)
     html = await response.text()
   } else {
-    throw new Error('audit requires --file or --url')
+    throw new UsageError(`audit requires --file or --url\n\n${usage()}`)
   }
   console.log(JSON.stringify(auditHtml(html, { url: target }), null, 2))
 }
 
 main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error))
-  process.exitCode = 1
+  process.exitCode = error instanceof UsageError ? 2 : 1
 })
