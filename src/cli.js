@@ -43,6 +43,13 @@ async function main() {
     return
   }
   if (args[0] !== 'audit') throw new UsageError(`Unknown command: ${args[0]}\n\n${usage()}`)
+  // Only the flags audit reads; a misspelt one is refused, never ignored (rule 12).
+  for (let index = 1; index < args.length; index += 1) {
+    if (args[index] === '--text') continue
+    if (args[index] !== '--file' && args[index] !== '--url') throw new UsageError(`seo audit does not take ${args[index]}; it takes --file, --url, --text\n\n${usage()}`)
+    if (index + 1 >= args.length) throw new UsageError(`${args[index]} needs a value\n\n${usage()}`)
+    index += 1
+  }
   const file = value(args, '--file')
   const target = value(args, '--url')
   let html
