@@ -68,10 +68,11 @@ const renderedReport = auditSeoSnapshot({
 ## Operational model
 
 - **Input:** local HTML, a public HTTPS response, or a caller-built snapshot.
-- **Output:** JSON containing the normalized snapshot, severity counts, and findings.
+- **Output:** JSON containing the normalized snapshot, severity counts, and findings; `--text` renders the same result as field paths and JSON-spelled leaf values. Null, empty arrays, empty objects and empty strings stay distinct; embedded newlines are escaped so each field stays on its own line.
 - **State:** none.
 - **Credentials:** none accepted; authenticated collection belongs to the caller.
 - **Cost:** local operation is unmetered.
+- **Refusals:** unknown commands/options, repeated `--file` or `--url`, and missing option values exit 2 before reading a file or fetching a page. File and fetch failures exit 1 with their cause. Help exits 0.
 
 ## Project status and support
 

@@ -30,7 +30,7 @@ function render(result, text) {
   const walk = (node, path) => {
     if (Array.isArray(node) && node.length) node.forEach((item, index) => walk(item, `${path}[${index}]`))
     else if (node && typeof node === 'object' && Object.keys(node).length) for (const [key, item] of Object.entries(node)) walk(item, path ? `${path}.${key}` : key)
-    else lines.push(path ? `${path}: ${node === null || typeof node === 'object' ? '-' : node}` : String(node))
+    else lines.push(path ? `${path}: ${JSON.stringify(node)}` : JSON.stringify(node))
   }
   walk(result, '')
   return lines.join('\n')
@@ -44,10 +44,13 @@ async function main() {
   }
   if (args[0] !== 'audit') throw new UsageError(`Unknown command: ${args[0]}\n\n${usage()}`)
   // Only the flags audit reads; a misspelt one is refused, never ignored (rule 12).
+  const seen = new Set()
   for (let index = 1; index < args.length; index += 1) {
     if (args[index] === '--text') continue
     if (args[index] !== '--file' && args[index] !== '--url') throw new UsageError(`seo audit does not take ${args[index]}; it takes --file, --url, --text\n\n${usage()}`)
-    if (index + 1 >= args.length) throw new UsageError(`${args[index]} needs a value\n\n${usage()}`)
+    if (seen.has(args[index])) throw new UsageError(`${args[index]} may only be supplied once\n\n${usage()}`)
+    seen.add(args[index])
+    if (index + 1 >= args.length || args[index + 1].startsWith('--')) throw new UsageError(`${args[index]} needs a value\n\n${usage()}`)
     index += 1
   }
   const file = value(args, '--file')
