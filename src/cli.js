@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
 import { readFile } from 'node:fs/promises'
+import { parseArgs } from 'node:util'
 import { auditHtml } from './index.js'
 
 // The invocation itself is wrong: exit 2 with the usage; any other failure
 // exits 1 with its own message (cli.md rule 10).
+const EXIT_FAILURE = 1 // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+const EXIT_USAGE = 2 // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+
 class UsageError extends Error {}
 
 function usage() {
@@ -18,14 +22,34 @@ The command prints a deterministic JSON audit to stdout; --text prints the same 
 as one path: value line per field.`
 }
 
-function value(args, name) {
-  const index = args.indexOf(name)
-  return index >= 0 ? args[index + 1] : null
+// The options audit reads; a misspelt or valueless one is refused by the
+// parser, never ignored (rule 12).
+const OPTIONS = {
+  file: { type: 'string', multiple: true },
+  url: { type: 'string', multiple: true },
+  text: { type: 'boolean' },
+  help: { type: 'boolean', short: 'h' },
+}
+
+function invocation() {
+  try {
+    return parseArgs({ options: OPTIONS, allowPositionals: true, strict: true })
+  } catch (error) {
+    throw new UsageError(`${error.message}\n\n${usage()}`)
+  }
+}
+
+// The one value of `--name`, refused when it is supplied more than once.
+function single(values, name) {
+  if (!Object.hasOwn(values, name)) return undefined
+  const [first, ...repeated] = values[name]
+  if (repeated.length) throw new UsageError(`--${name} may only be supplied once\n\n${usage()}`)
+  return first
 }
 
 // The same result for people: one `path: value` line per field (cli.md rule 13).
 function render(result, text) {
-  if (!text) return JSON.stringify(result, null, 2)
+  if (!text) return JSON.stringify(result, null, '  ')
   const lines = []
   const walk = (node, path) => {
     if (Array.isArray(node) && node.length) node.forEach((item, index) => walk(item, `${path}[${index}]`))
@@ -36,25 +60,23 @@ function render(result, text) {
   return lines.join('\n')
 }
 
+// The User-Agent names this package at the version it is published as.
+async function userAgent() {
+  const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+  return `seo-cli/${manifest.version}`
+}
+
 async function main() {
-  const args = process.argv.slice(2)
-  if (!args.length || args.includes('--help') || args.includes('-h')) {
+  const { values, positionals } = invocation()
+  const [command, ...extra] = positionals
+  if (!command || values.help) {
     console.log(usage())
     return
   }
-  if (args[0] !== 'audit') throw new UsageError(`Unknown command: ${args[0]}\n\n${usage()}`)
-  // Only the flags audit reads; a misspelt one is refused, never ignored (rule 12).
-  const seen = new Set()
-  for (let index = 1; index < args.length; index += 1) {
-    if (args[index] === '--text') continue
-    if (args[index] !== '--file' && args[index] !== '--url') throw new UsageError(`seo audit does not take ${args[index]}; it takes --file, --url, --text\n\n${usage()}`)
-    if (seen.has(args[index])) throw new UsageError(`${args[index]} may only be supplied once\n\n${usage()}`)
-    seen.add(args[index])
-    if (index + 1 >= args.length || args[index + 1].startsWith('--')) throw new UsageError(`${args[index]} needs a value\n\n${usage()}`)
-    index += 1
-  }
-  const file = value(args, '--file')
-  const target = value(args, '--url')
+  if (command !== 'audit') throw new UsageError(`Unknown command: ${command}\n\n${usage()}`)
+  if (extra.length) throw new UsageError(`seo audit takes no arguments besides its options; got ${extra.join(' ')}\n\n${usage()}`)
+  const file = single(values, 'file')
+  const target = single(values, 'url')
   let html
   if (file) {
     html = await readFile(file, 'utf8')
@@ -62,20 +84,20 @@ async function main() {
     let url
     try {
       url = new URL(target)
-    } catch {
-      throw new UsageError(`--url ${JSON.stringify(target)} is not a URL`)
+    } catch (error) {
+      throw new UsageError(`--url ${JSON.stringify(target)} is not a URL: ${error.message}`)
     }
     if (url.protocol !== 'https:' || url.username || url.password) throw new UsageError('--url must be a credential-free HTTPS URL')
-    const response = await fetch(url, { redirect: 'follow', headers: { 'user-agent': 'seo-cli/0.1' } })
-    if (!response.ok) throw new Error(`Fetch returned HTTP ${response.status}`)
+    const response = await fetch(url, { redirect: 'follow', headers: { 'user-agent': await userAgent() } })
+    if (!response.ok) throw new Error(`Fetch of ${url} returned HTTP ${response.status}`)
     html = await response.text()
   } else {
     throw new UsageError(`audit requires --file or --url\n\n${usage()}`)
   }
-  console.log(render(auditHtml(html, { url: target }), args.includes('--text')))
+  console.log(render(auditHtml(html, { url: target }), values.text))
 }
 
 main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error))
-  process.exitCode = error instanceof UsageError ? 2 : 1
+  process.exitCode = error instanceof UsageError ? EXIT_USAGE : EXIT_FAILURE
 })
