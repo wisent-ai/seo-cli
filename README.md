@@ -73,6 +73,7 @@ const renderedReport = auditSeoSnapshot({
 - **Credentials:** none accepted; authenticated collection belongs to the caller.
 - **Cost:** local operation is unmetered.
 - **Refusals:** unknown commands/options, repeated `--file` or `--url`, and missing option values exit 2 before reading a file or fetching a page. File and fetch failures exit 1 with their cause. Help exits 0.
+- **Qualification:** `SEO_TEST_PAGE=https://<public page> node --test tests/cli/audit.test.mjs` audits a real public page through `--url` and from a saved copy, checks that `--text` prints one JSON-spelled line per leaf of the JSON audit, and runs every refusal above; with `SEO_TEST_DEFECT` and `SEO_TEST_CRITERION` set, a passing run on committed source writes `criterion.json` under `.build/real-tests/audit/<run>/`.
 
 ## Project status and support
 
