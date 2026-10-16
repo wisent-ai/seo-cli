@@ -30,7 +30,7 @@ It extracts search metadata and reports concrete omissions without an account, h
 
 - SEO CLI does not claim rankings, traffic, keyword volume, backlink quality, or search-engine index state.
 - It does not bypass authentication, robots controls, rate limits, or access restrictions.
-- Length guidance is a presentation heuristic, not a ranking guarantee.
+- It assumes no title or description length: search engines publish none, so a length is judged only against bounds you declare.
 - A page audit does not replace Search Console, log, performance, accessibility, or conversion evidence.
 
 ## Quick start
@@ -48,6 +48,17 @@ Audit a public page:
 ```bash
 node src/cli.js audit --url https://example.com/
 ```
+
+Hold the title and meta description to lengths you choose (each `MIN-MAX`
+characters); a length you do not bound is not judged:
+
+```bash
+node src/cli.js audit --url https://example.com/ --title-length 30-60 --description-length 70-160
+```
+
+In the library, pass the same bounds as `auditHtml(html, { lengths: { title: { min, max } } })`
+or `auditSeoSnapshot(snapshot, { description: { min, max } })`. A field the page does not
+state is `null` in the snapshot.
 
 Use the library:
 
@@ -72,7 +83,7 @@ const renderedReport = auditSeoSnapshot({
 - **State:** none.
 - **Credentials:** none accepted; authenticated collection belongs to the caller.
 - **Cost:** local operation is unmetered.
-- **Refusals:** unknown commands/options, repeated `--file` or `--url`, and missing option values exit 2 before reading a file or fetching a page. File and fetch failures exit 1 with their cause. Help exits 0.
+- **Refusals:** unknown commands/options, repeated `--file`, `--url` or length bounds, a length bound that is not `MIN-MAX` with MIN no larger than MAX, and missing option values exit 2 before reading a file or fetching a page. File and fetch failures exit 1 with their cause. Help exits 0.
 - **Qualification:** `SEO_TEST_PAGE=https://<public page> node --test tests/cli/audit.test.mjs` audits a real public page through `--url` and from a saved copy, checks that `--text` prints one JSON-spelled line per leaf of the JSON audit, and runs every refusal above; with `SEO_TEST_DEFECT` and `SEO_TEST_CRITERION` set, a passing run on committed source writes `criterion.json` under `.build/real-tests/audit/<run>/`.
 
 ## Project status and support

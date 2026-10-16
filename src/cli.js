@@ -15,8 +15,12 @@ function usage() {
   return `seo-cli
 
 Usage:
-  seo audit --file <page.html> [--url <canonical source URL>]
-  seo audit --url <https://public.example/page>
+  seo audit --file <page.html> [--url <canonical source URL>] [length bounds]
+  seo audit --url <https://public.example/page> [length bounds]
+
+Length bounds, each MIN-MAX characters, hold the title and the meta description
+to the bounds you choose; without one, that length is not judged:
+  --title-length <MIN-MAX>  --description-length <MIN-MAX>
 
 The command prints a deterministic JSON audit to stdout; --text prints the same audit
 as one path: value line per field.`
@@ -27,6 +31,8 @@ as one path: value line per field.`
 const OPTIONS = {
   file: { type: 'string', multiple: true },
   url: { type: 'string', multiple: true },
+  'title-length': { type: 'string', multiple: true },
+  'description-length': { type: 'string', multiple: true },
   text: { type: 'boolean' },
   help: { type: 'boolean', short: 'h' },
 }
@@ -45,6 +51,17 @@ function single(values, name) {
   const [first, ...repeated] = values[name]
   if (repeated.length) throw new UsageError(`--${name} may only be supplied once\n\n${usage()}`)
   return first
+}
+
+// The bounds `--name` declares as MIN-MAX whole characters, or none when it is not given.
+function bounds(values, name) {
+  const raw = single(values, name)
+  if (raw === undefined) return undefined
+  const match = raw.match(/^(?<min>\d+)-(?<max>\d+)$/u)
+  const min = match ? Number(match.groups.min) : Number.NaN
+  const max = match ? Number(match.groups.max) : Number.NaN
+  if (!match || min > max) throw new UsageError(`--${name} must be MIN-MAX whole characters with MIN no larger than MAX, got ${raw}\n\n${usage()}`)
+  return { min, max }
 }
 
 // The same result for people: one `path: value` line per field (cli.md rule 13).
@@ -77,6 +94,7 @@ async function main() {
   if (extra.length) throw new UsageError(`seo audit takes no arguments besides its options; got ${extra.join(' ')}\n\n${usage()}`)
   const file = single(values, 'file')
   const target = single(values, 'url')
+  const lengths = { title: bounds(values, 'title-length'), description: bounds(values, 'description-length') }
   let html
   if (file) {
     html = await readFile(file, 'utf8')
@@ -94,7 +112,7 @@ async function main() {
   } else {
     throw new UsageError(`audit requires --file or --url\n\n${usage()}`)
   }
-  console.log(render(auditHtml(html, { url: target }), values.text))
+  console.log(render(auditHtml(html, { url: target, lengths }), values.text))
 }
 
 main().catch((error) => {

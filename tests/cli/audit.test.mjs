@@ -7,8 +7,9 @@
 //     value JSON-spelled and equal to the leaf at that path, so null, empty
 //     strings, empty lists and empty objects stay distinct;
 //   - help exits 0; an unknown command, an unknown option, a repeated
-//     --file, an option without its value and a URL that is not credential-free
-//     HTTPS exit 2 before anything is read or fetched; a file that cannot be
+//     --file, an option without its value, a URL that is not credential-free
+//     HTTPS and a length bound that is not MIN-MAX with MIN no larger than MAX
+//     exit 2 before anything is read or fetched; a file that cannot be
 //     read exits 1 with its cause.
 //
 //   SEO_TEST_PAGE=https://<public page> node --test tests/cli/audit.test.mjs
@@ -124,6 +125,8 @@ journey('help exits 0 and wrong invocations exit 2 before reading or fetching', 
     ['audit', '--file', '--text'],
     ['audit'],
     ['audit', '--url', insecure.href],
+    ['audit', '--file', saved, '--title-length', 'long-short'],
+    ['audit', '--file', saved, '--description-length', '160-70'],
   ]) {
     const run = seo(...args)
     assert.equal(run.status, USAGE, `${args.join(' ')}: ${run.stderr}`)
