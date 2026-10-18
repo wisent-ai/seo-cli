@@ -60,7 +60,7 @@ function bounds(values, name) {
   const match = raw.match(/^(?<min>\d+)-(?<max>\d+)$/u)
   const min = match ? Number(match.groups.min) : Number.NaN
   const max = match ? Number(match.groups.max) : Number.NaN
-  if (!match || min > max) throw new UsageError(`--${name} must be MIN-MAX whole characters with MIN no larger than MAX, got ${raw}\n\n${usage()}`)
+  if (!match || !Number.isSafeInteger(min) || !Number.isSafeInteger(max) || min > max) throw new UsageError(`--${name} must be MIN-MAX safe whole characters with MIN no larger than MAX, got ${raw}\n\n${usage()}`)
   return { min, max }
 }
 

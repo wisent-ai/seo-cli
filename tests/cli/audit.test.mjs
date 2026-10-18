@@ -134,6 +134,21 @@ journey('help exits 0 and wrong invocations exit 2 before reading or fetching', 
   }
 })
 
+journey('unsafe and overflowing bounds refuse before accessing the input', () => {
+  const missing = join(scratch, 'unread-bound-input.html')
+  const unsafe = `${BigInt(Number.MAX_SAFE_INTEGER) + 1n}`
+  const overflowing = `${BigInt(Number.MAX_VALUE)}${BigInt(Number.MAX_VALUE)}`
+  for (const name of ['--title-length', '--description-length']) {
+    for (const raw of [`${unsafe}-${unsafe}`, `${overflowing}-${overflowing}`]) {
+      const run = seo('audit', '--file', missing, name, raw)
+      assert.equal(run.status, USAGE, run.stderr)
+      assert.equal(run.stdout, '')
+      assert.ok(run.stderr.includes(name) && run.stderr.includes(raw), run.stderr)
+      assert.ok(!run.stderr.includes('ENOENT'), run.stderr)
+    }
+  }
+})
+
 journey('a file that cannot be read exits 1 with its cause', () => {
   const missing = join(scratch, 'missing.html')
   const run = seo('audit', '--file', missing)

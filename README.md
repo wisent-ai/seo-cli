@@ -50,7 +50,7 @@ node src/cli.js audit --url https://example.com/
 ```
 
 Hold the title and meta description to lengths you choose (each `MIN-MAX`
-characters); a length you do not bound is not judged:
+characters, both exactly representable safe integers); a length you do not bound is not judged:
 
 ```bash
 node src/cli.js audit --url https://example.com/ --title-length 30-60 --description-length 70-160
@@ -83,7 +83,7 @@ const renderedReport = auditSeoSnapshot({
 - **State:** none.
 - **Credentials:** none accepted; authenticated collection belongs to the caller.
 - **Cost:** local operation is unmetered.
-- **Refusals:** unknown commands/options, repeated `--file`, `--url` or length bounds, a length bound that is not `MIN-MAX` with MIN no larger than MAX, and missing option values exit 2 before reading a file or fetching a page. File and fetch failures exit 1 with their cause. Help exits 0.
+- **Refusals:** unknown commands/options, repeated `--file`, `--url` or length bounds, a length bound that is not `MIN-MAX` with safe integer endpoints and MIN no larger than MAX, and missing option values exit 2 before reading a file or fetching a page. Overflowing or imprecisely representable bounds are refused rather than rounded. File and fetch failures exit 1 with their cause. Help exits 0.
 - **Qualification:** `SEO_TEST_PAGE=https://<public page> node --test tests/cli/audit.test.mjs` audits a real public page through `--url` and from a saved copy, checks that `--text` prints one JSON-spelled line per leaf of the JSON audit, and runs every refusal above; with `SEO_TEST_DEFECT` and `SEO_TEST_CRITERION` set, a passing run on committed source writes `criterion.json` under `.build/real-tests/audit/<run>/`.
 
 ## Project status and support
